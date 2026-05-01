@@ -7,16 +7,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -34,21 +32,17 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p /tmp/pangea-pages
+          cp -R dist/. /tmp/pangea-pages/
+          touch /tmp/pangea-pages/.nojekyll
+          git fetch origin gh-pages || true
+          git switch --orphan gh-pages
+          git rm -rf .
+          cp -R /tmp/pangea-pages/. .
+          git add -A
+          git commit -m "Deploy GitHub Pages"
+          git push -f origin gh-pages
