@@ -2,6 +2,8 @@
 
 A first playable Three.js prototype for a procedural arena combat game.
 
+Live demo: https://jayhack.github.io/pangea/
+
 ## Controls
 
 - Move: `WASD` or arrow keys
