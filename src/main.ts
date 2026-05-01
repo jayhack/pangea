@@ -29,6 +29,11 @@ interface FighterUpdateResult {
   strike?: StrikeEvent;
 }
 
+interface MovementInput {
+  forward: number;
+  turn: number;
+}
+
 interface WorldSpec {
   terrain: {
     size: number;
@@ -163,11 +168,6 @@ function randomRange(random: () => number, min: number, max: number): number {
   return min + (max - min) * random();
 }
 
-function dampAngle(current: number, target: number, lambda: number, deltaTime: number): number {
-  const delta = Math.atan2(Math.sin(target - current), Math.cos(target - current));
-  return current + delta * (1 - Math.exp(-lambda * deltaTime));
-}
-
 function setSegment(mesh: THREE.Mesh, start: THREE.Vector3, end: THREE.Vector3, radius: number): void {
   const direction = end.clone().sub(start);
   const length = direction.length();
@@ -191,20 +191,20 @@ class InputController {
 
   constructor(targetCanvas: HTMLCanvasElement) {
     window.addEventListener("keydown", (event) => {
-      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) {
+      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyA", "KeyS", "KeyD"].includes(event.code)) {
         event.preventDefault();
       }
 
       if (!event.repeat) {
-        if (event.code === "Space") {
+        if (event.code === "Space" || event.code === "KeyD") {
           this.jumpQueued = true;
         }
 
-        if (event.code === "KeyJ" || event.code === "KeyF") {
+        if (event.code === "KeyA" || event.code === "KeyJ" || event.code === "KeyF") {
           this.punchQueued = true;
         }
 
-        if (event.code === "KeyK" || event.code === "KeyG") {
+        if (event.code === "KeyS" || event.code === "KeyK" || event.code === "KeyG") {
           this.kickQueued = true;
         }
       }
@@ -233,30 +233,30 @@ class InputController {
     });
   }
 
-  movement(): THREE.Vector3 {
-    const direction = new THREE.Vector3();
+  movement(): MovementInput {
+    let forward = 0;
+    let turn = 0;
 
-    if (this.keys.has("KeyA") || this.keys.has("ArrowLeft")) {
-      direction.x -= 1;
+    if (this.keys.has("ArrowLeft")) {
+      turn -= 1;
     }
 
-    if (this.keys.has("KeyD") || this.keys.has("ArrowRight")) {
-      direction.x += 1;
+    if (this.keys.has("ArrowRight")) {
+      turn += 1;
     }
 
     if (this.keys.has("KeyW") || this.keys.has("ArrowUp")) {
-      direction.z += 1;
+      forward += 1;
     }
 
-    if (this.keys.has("KeyS") || this.keys.has("ArrowDown")) {
-      direction.z -= 1;
+    if (this.keys.has("ArrowDown")) {
+      forward -= 1;
     }
 
-    if (direction.lengthSq() > 1) {
-      direction.normalize();
-    }
-
-    return direction;
+    return {
+      forward: clamp(forward, -1, 1),
+      turn: clamp(turn, -1, 1),
+    };
   }
 
   consumeJump(): boolean {
@@ -285,6 +285,7 @@ class StickFighter {
   yaw = 0;
 
   private readonly horizontalVelocity = new THREE.Vector3();
+  private readonly targetVelocity = new THREE.Vector3();
   private readonly segmentGeometry = new THREE.CylinderGeometry(1, 1, 1, 12);
   private readonly sphereGeometry = new THREE.SphereGeometry(1, 18, 14);
   private readonly stickMaterial = new THREE.MeshStandardMaterial({
@@ -332,27 +333,32 @@ class StickFighter {
   update(input: InputController, deltaTime: number): FighterUpdateResult {
     const startedActions: ActionName[] = [];
     const movement = input.movement();
-    const targetSpeed = 6.15;
+    const turnSpeed = 2.35;
+    const moveSpeed = movement.forward >= 0 ? 6.15 : 3.65;
     const airControl = this.onGround ? 18 : 7;
+    const targetVelocity = this.targetVelocity.set(0, 0, 0);
 
-    if (movement.lengthSq() > 0) {
-      this.yaw = dampAngle(this.yaw, Math.atan2(movement.x, movement.z), 13, deltaTime);
-      this.horizontalVelocity.x = THREE.MathUtils.damp(
-        this.horizontalVelocity.x,
-        movement.x * targetSpeed,
-        airControl,
-        deltaTime,
-      );
-      this.horizontalVelocity.z = THREE.MathUtils.damp(
-        this.horizontalVelocity.z,
-        movement.z * targetSpeed,
-        airControl,
-        deltaTime,
-      );
-    } else {
-      this.horizontalVelocity.x = THREE.MathUtils.damp(this.horizontalVelocity.x, 0, 12, deltaTime);
-      this.horizontalVelocity.z = THREE.MathUtils.damp(this.horizontalVelocity.z, 0, 12, deltaTime);
+    if (movement.turn !== 0) {
+      this.yaw += movement.turn * turnSpeed * deltaTime;
+      this.yaw = Math.atan2(Math.sin(this.yaw), Math.cos(this.yaw));
     }
+
+    if (movement.forward !== 0) {
+      targetVelocity.set(Math.sin(this.yaw), 0, Math.cos(this.yaw)).multiplyScalar(movement.forward * moveSpeed);
+    }
+
+    this.horizontalVelocity.x = THREE.MathUtils.damp(
+      this.horizontalVelocity.x,
+      targetVelocity.x,
+      movement.forward === 0 ? 12 : airControl,
+      deltaTime,
+    );
+    this.horizontalVelocity.z = THREE.MathUtils.damp(
+      this.horizontalVelocity.z,
+      targetVelocity.z,
+      movement.forward === 0 ? 12 : airControl,
+      deltaTime,
+    );
 
     if (input.consumeJump() && this.jumpsUsed < 2) {
       this.verticalVelocity = this.jumpsUsed === 0 ? 8.2 : 7.05;
@@ -859,6 +865,7 @@ function frame(): void {
   const deltaTime = Math.min(clock.getDelta(), 1 / 30);
   const result = fighter.update(input, deltaTime);
 
+  document.documentElement.dataset.playerYaw = fighter.yaw.toFixed(4);
   result.startedActions.forEach(pulseActionChip);
 
   if (result.strike) {
