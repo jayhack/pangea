@@ -1,0 +1,133 @@
+:root {
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #111511;
+  background: #87b5d9;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  min-width: 320px;
+}
+
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.hud {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  display: grid;
+  gap: 10px;
+  width: min(330px, calc(100vw - 36px));
+  pointer-events: none;
+  color: #142018;
+}
+
+.brand {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+  text-shadow: 0 1px 16px rgb(255 255 255 / 70%);
+}
+
+.meter {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgb(20 32 24 / 16%);
+  border-radius: 8px;
+  background: rgb(247 253 246 / 72%);
+  box-shadow: 0 10px 30px rgb(20 32 24 / 14%);
+  backdrop-filter: blur(10px);
+}
+
+.meter__label {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.meter__track {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(20 32 24 / 14%);
+}
+
+.meter__fill {
+  position: absolute;
+  inset: 0;
+  width: 78%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #1a8f5a, #e2c85a);
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-chip {
+  display: inline-grid;
+  place-items: center;
+  min-width: 64px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgb(20 32 24 / 16%);
+  border-radius: 8px;
+  background: rgb(247 253 246 / 78%);
+  box-shadow: 0 8px 22px rgb(20 32 24 / 12%);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition:
+    transform 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.action-chip.is-active {
+  color: #fffaf0;
+  background: #172217;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 560px) {
+  .hud {
+    top: 12px;
+    left: 12px;
+    width: min(300px, calc(100vw - 24px));
+  }
+
+  .brand {
+    font-size: 20px;
+  }
+}

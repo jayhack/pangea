@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pangea</title>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game"></canvas>
+      <div class="hud" aria-label="Player status">
+        <div class="brand">Pangea</div>
+        <div class="meter">
+          <span class="meter__label">Focus</span>
+          <span class="meter__track"><span class="meter__fill"></span></span>
+        </div>
+        <div class="action-row" aria-label="Combat actions">
+          <span class="action-chip" id="punch-chip">A Punch</span>
+          <span class="action-chip" id="kick-chip">S Kick</span>
+          <span class="action-chip" id="jump-chip">D Jump</span>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
